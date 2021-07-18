@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+        integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <script src="https://unpkg.com/react@17/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js" crossorigin></script>
+    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+    <style>
+        @keyframes shake {
+            0% {
+                margin-left: 5%;
+            }
+
+            50% {
+                margin-right: 5%;
+            }
+
+            100% {
+                margin-left: 5%;
+            }
+        }
+
+        @keyframes to-green {
+            0% {
+                color: initial;
+            }
+
+            20% {
+                color: rgb(29, 197, 29);
+            }
+
+            100% {
+                color: initial;
+            }
+        }
+
+        #container {
+            text-align: center;
+            font-size: 3em;
+        }
+
+        .wrong-answer {
+            animation-name: shake;
+            animation-duration: 100ms;
+            animation-play-state: running;
+            animation-iteration-count: 2;
+        }
+
+        .right-answer {
+            animation-name: to-green;
+            animation-duration: 700ms;
+            animation-play-state: running;
+            animation-iteration-count: 1;
+        }
+
+        #problem {
+            font-size: 3em;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app"></div>
+
+    <script type="text/babel"> // Use Babel to translate JSX to JS
+
+        function App() {
+
+            // var operator = ["plus", "minus", "times", "divide"];
+            // var index = Math.floor(Math.random() * 4);
+            // var chosenOperator = operator[index];
+
+            function randomOperator() {
+                var operator = ["plus", "minus", "times", "divide"];
+                // var operator = ["plus", "minus", "times"];
+                var index = Math.floor(Math.random() * operator.length);
+                var chosenOperator = operator[index];
+                return chosenOperator;
+            }
+
+            function getOperatorSymbol(operator) {
+                var output;
+                switch (operator) {
+                    case "plus":
+                        return "+";
+                    case "minus":
+                        return "-";
+                    case "times":
+                        return "*";
+                    case "divide":
+                        return "/";
+                }
+            }
+
+            function getNumOfDecimals(number) {
+                try {
+                    var num = number.toString().replace(".", ",");
+                    if (num.length === 1) {
+                        return 0;
+                    }
+                    else 
+                    {
+                    num = num.split(",")[1].length;
+                    return num;
+                    }
+                }
+                catch(err) {
+                    console.log(number);
+                    console.log(err);
+                    return 10;
+                }
+            }
+
+            function generateProblem() {
+                var operator = randomOperator();
+                var num1;
+                var num2;
+                num1 = Math.ceil(Math.random() * 10);
+                num2 = Math.ceil(Math.random() * 10);
+
+                // lisäys jakolaskulle
+                var result;
+                if (operator === "divide") {
+                    while (true) {
+                        num1 = Math.ceil(Math.random() * 10);
+                        num2 = Math.ceil(Math.random() * 10);
+                        result = num1 / num2;
+                        if (getNumOfDecimals(result) <= 1) {
+                            break;
+                        }
+                    }
+                }
+                
+                return [num1, operator, num2];
+            }
+
+            var problem = generateProblem();
+            var num1 = problem[0];
+            var operator = problem[1];
+            var num2 = problem[2];
+
+            // We can set the state to be a JS object with multiple values
+            const [state, setState] = React.useState({
+                num1: num1,
+                num2: num2,
+                response: "",
+                score: 0,
+                operator: operator
+            })
+
+            function isTrue(num1, num2, operator, guess) {
+                var output;
+                switch (operator) {
+                    case "plus":
+                        output = num1 + num2;
+                        break;
+                    case "minus":
+                        output = num1 - num2;
+                        break;
+                    case "times":
+                        output = num1 * num2;
+                        break;
+                    case "divide":
+                        output = num1 / num2;
+                        break;
+                }
+                return parseInt(output) === parseInt(guess);
+            }
+
+            function inputKeyPress(event) {
+                if (event.key === "Enter") {
+                    const answer = parseInt(state.response);
+                    if (isTrue(state.num1, state.num2, state.operator, answer)) {
+                        // user got question right
+                        var container = document.querySelector("#container")
+
+                        // https://css-tricks.com/restart-css-animation/
+                        container.className = "";
+                        void container.offsetWidth;
+                        container.classList.add("right-answer");
+
+                        var problem = generateProblem();
+                        var num1 = problem[0];
+                        var operator = problem[1];
+                        var num2 = problem[2];
+
+                        setState({
+                            ...state,
+                            num1: num1,
+                            num2: num2,
+                            score: state.score + 1,
+                            response: "",
+                            operator: operator
+                        })
+                    }
+                    else {
+                        // user got question wrong
+                        var container = document.querySelector("#container")
+
+                        // https://css-tricks.com/restart-css-animation/
+                        container.className = "";
+                        void container.offsetWidth;
+                        container.classList.add("wrong-answer");
+
+                        setState({
+                            ...state,
+                            score: state.score - 1,
+                            response: ""
+                        })
+                    }
+                }
+            }
+
+            function updateResponse(event) {
+                setState({
+                    ...state, // use existing values for everything else
+                    response: event.target.value
+                })
+            }
+
+            return (
+                <div id="container">
+                    <div id="problem">{state.num1} {getOperatorSymbol(state.operator)} {state.num2}</div>
+                    <input id="input" onKeyPress={inputKeyPress} onChange={updateResponse} autoFocus={true} value={state.response} />
+                    <div id="score">Score: {state.score}</div>
+                </div>
+            )
+        }
+
+        /* We do this to render components into the DOM.
+        Takes two arguments: 1) component 2) destination */
+        ReactDOM.render(<App />, document.querySelector("#app"));
+
+    </script>
+</body>
+
+</html>
